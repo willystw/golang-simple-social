@@ -38,6 +38,14 @@ func (p *password) Set(text string) error {
 	return nil
 }
 
+func (u *User) SetPassword(plaintext string) error {
+	if plaintext == "" {
+		return errors.New("password cannot be empty")
+	}
+	u.Password.Set(plaintext)
+	return nil
+}
+
 type UserStore struct {
 	db *sql.DB
 }

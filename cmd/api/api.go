@@ -70,6 +70,7 @@ func (app application) mount() http.Handler {
 			})
 		})
 		r.Route("/users", func(r chi.Router) {
+			r.Put("/activate/{token}", app.activateUserHandler)
 			r.Route("/{userID}", func(r chi.Router) {
 				r.Use(app.usersContextMiddleware)
 
@@ -82,9 +83,7 @@ func (app application) mount() http.Handler {
 				r.Get("/feed", app.getUserFeedHandler)
 			})
 
-			r.Route("/authentication", func(r chi.Router) {
-				r.Post("/user", app.registerUserHandler)
-			})
+			
 		})
 
 		r.Route("/comments", func(r chi.Router) {
@@ -92,6 +91,10 @@ func (app application) mount() http.Handler {
 				r.Use(app.postsContextMiddleware)
 				r.Post("/", app.createCommentHandler)
 			})
+		})
+
+		r.Route("/authentication", func(r chi.Router) {
+			r.Post("/user", app.registerUserHandler)
 		})
 	})
 

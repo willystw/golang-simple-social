@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"maps"
@@ -27,17 +28,21 @@ var usercomments = []string{
 	"Great work!", "Love this!", "So inspiring!", "Amazing content!", "Keep it up!", "Nice job!", "Very creative!", "Well done!", "So cool!", "This is awesome!", "Nice one!", "I love it!", "Looking great!", "So impressive!", "This is fantastic!", "Great idea!", "So unique!", "Well executed!", "Incredible!", "Totally awesome!",
 }
 
-func Seed(store store.Storage) {
+func Seed(store store.Storage, db *sql.DB) {
 	ctx := context.Background()
 
 	users := generateUsers(100)
+	tx,_ := db.BeginTx(ctx, nil)
 	for _, user := range users {
-		if err := store.Users.Create(ctx, nil, user); err != nil {
+		if err := store.Users.Create(ctx, tx, user); err != nil {
+			_ = tx.Rollback()
 			log.Println("error creating user:", err)
 			return
 
 		}
 	}
+
+	tx.Commit() 
 
 	posts := generatePosts(200, users)
 	for _, post := range posts {

@@ -22,7 +22,7 @@ type User struct {
 	Email     string   `json:"email"`
 	Password  password `json:"-"`
 	CreatedAt string   `json:"created_at"`
-	IsActive bool `json:"is_active"`
+	IsActive  bool     `json:"is_active"`
 }
 
 type password struct {
@@ -161,7 +161,7 @@ func (s *UserStore) Activate(ctx context.Context, token string) error {
 		}
 		//2. update user status
 		user.IsActive = true
-		if err := s.update(ctx, tx, user); err !=nil {
+		if err := s.update(ctx, tx, user); err != nil {
 			return err
 		}
 		//3. clean the invitations
@@ -188,7 +188,6 @@ func (s *UserStore) getUserFromInvitation(ctx context.Context, tx *sql.Tx, token
 
 	hash := sha256.Sum256([]byte(token))
 	hashToken := hex.EncodeToString(hash[:])
-
 
 	err := s.db.QueryRowContext(ctx, query, hashToken, time.Now()).Scan(
 		&user.ID,
@@ -245,4 +244,31 @@ func (s *UserStore) deleteUserInvitations(ctx context.Context, tx *sql.Tx, userI
 	}
 	return nil
 
+}
+
+func (s *UserStore) Delete(ctx context.Context, userID int64) error {
+	return withTx(s.db, ctx, func(tx *sql.Tx) error {
+		if err := s.delete(ctx, tx, userID); err != nil {
+			return err
+		}
+
+		if err := s.deleteUserInvitations(ctx, tx, userID); err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
+func (s *UserStore) delete(ctx context.Context, tx *sql.Tx, userID int64) error {
+	query := `delete from users where id = $1`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
+	_, err := tx.ExecContext(ctx, query, userID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

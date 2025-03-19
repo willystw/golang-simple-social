@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/willystw/golang-simple-social/docs" // generate swagger docs
+	"github.com/willystw/golang-simple-social/internal/mailer"
 	"github.com/willystw/golang-simple-social/internal/store"
 )
 
@@ -18,18 +19,31 @@ type application struct {
 	config config
 	store  store.Storage
 	logger *zap.SugaredLogger
+	mailer mailer.Client
 }
 
 type config struct {
-	addr   string
-	db     dbConfig
-	env    string
-	apiURL string
-	mail   mailConfig
+	addr        string
+	db          dbConfig
+	env         string
+	apiURL      string
+	mail        mailConfig
+	frontendUrl string
 }
 
 type mailConfig struct {
-	exp time.Duration
+	sendGrid  sendGridConfig
+	mailTrap  mailTrapConfig
+	fromEmail string
+	exp       time.Duration
+}
+
+type sendGridConfig struct {
+	apiKey string
+}
+
+type mailTrapConfig struct {
+	apiKey string
 }
 
 type dbConfig struct {
@@ -83,7 +97,6 @@ func (app application) mount() http.Handler {
 				r.Get("/feed", app.getUserFeedHandler)
 			})
 
-			
 		})
 
 		r.Route("/comments", func(r chi.Router) {
